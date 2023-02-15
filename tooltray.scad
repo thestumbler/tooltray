@@ -113,10 +113,9 @@ module extrusion( ex, h ) {
 
 
 
-// panels made from D4-untrimmed Chinese poster board 
-// standard size is 195 x 270 mm
-// one sheet of cardboard is about 1.25 ~ 1.30 mm thick
-// a sandwich of three measures ~3.8 mm
+// panels made from three-ply of poster board
+// China standard D4-untrimmed size: 195 x 270 mm
+// about 1.25 ~ 1.30 mm thick, 3-ply ~3.8 mm
 shelf = [195, 270, 3.8];
 shelf_color = "darkgoldenrod";
 
@@ -162,13 +161,14 @@ module place_slider(offset) {
     make_slider();
 }
 
-cap = [ 20.0, 20.0, 2.0 ];
+cap_snap_hgt=4.0;
+cap_peg_hgt = 4.0;
+cap = [ 20.0, 20.0, 4.0 ];
 cap_peg_dia = 3.8;
-cap_peg_hgt = 3;
-cap_grip = [5.45, 1.5, 2];
-cap_grasp = [8.3, 2, 2];
+cap_grip = [5.45, 1.5, cap_snap_hgt];
+cap_grasp = [8.3, 2, cap_snap_hgt];
 cap_color = "lightblue";
-cap_notch = [5.5, 10, 10];
+cap_notch = [6.0, 12.4, 10];
 module make_endcap(shelf=false) {
   $fn=50;
   color(cap_color) 
@@ -226,8 +226,9 @@ module print_endcap() {
 // makes an endcap with a support to attach the shelf
 supt_len = 30; // protrusion length from center of extrusion
 pem_thk = 6;
+supt_gap = 0.0;
 supt = [ 0.5*(cap.x-cap_notch.x), supt_len, cap.z ];
-pem = [ supt.x, supt_len - 0.5*cap.x-2, pem_thk ];
+pem = [ supt.x, supt_len - 0.5*cap.x-supt_gap, pem_thk ];
 module make_endcap_with_support(offset=0) {
   color(cap_color)
   difference() {
@@ -240,14 +241,13 @@ module make_endcap_with_support(offset=0) {
       }
       translate([0.5*cap.x-0.5*supt.x, 0.5*supt.y, 0])
         make_cube_quarter_round_1( supt );
-      translate([0.5*cap_notch.x, 2+0.5*cap.y, 0])
+      translate([0.5*cap_notch.x, supt_gap+0.5*cap.y, 0])
         cube(pem);
     }
     translate([0.5,supt_len-0.5*pem.y, -cap.z + 0.5*(pem.z+cap.z)])
       rotate(90,[0,1,0])
         cylinder(d=m3_insert_dia, h=2+pem.x+2*cap.z);
   }
-
 }
 module place_endcap_with_support(offset=0, mirror=false) {
   if(offset==0.0 && !mirror) {
@@ -295,10 +295,23 @@ module print_endcap_with_support_pair_b() {
     make_endcap_with_support();
 }
 module print_endcap_with_support_quad() {
-  translate([supt_len-0.5*pem.y,0,0])
+  gap=1;
+  translate([+supt_len-0.5*pem.y+gap,0,0])
     print_endcap_with_support_pair_a();
-  translate([-supt_len+0.5*pem.y,0,0])
+  translate([-supt_len+0.5*pem.y-gap,0,0])
     print_endcap_with_support_pair_b();
+}
+module print_endcap_with_support_16() {
+  gap=1+1; // gap=quad-gap is zero
+  xseps = [ +supt_len-0.5*pem.y+0.5*cap.x+gap,
+            -supt_len-0.5*pem.y+0.5*cap.x-gap ];
+            // +supt_len-0.5*pem.y+0.5*cap.x+gap,
+            // -supt_len-0.5*pem.y+0.5*cap.x+gap,
+  yseps = [ +cap.y+gap, +cap.y+gap, -cap.y-gap, -cap.y-gap ];
+  for(x=xseps, y=yseps) {
+    translate([x,y,0])
+      print_endcap_with_support_quad();
+  }
 }
 
 //========================================================================
@@ -496,10 +509,9 @@ module make_tool_tray() {
       extrusion( ex, ex2 );
 }
 
-make_tool_tray();
+*make_tool_tray();
 *tool_tray_opening();
-
-*place_shelf();
+// place_shelf();
 
 // place_slider(10);
 // make_slider();
@@ -517,7 +529,9 @@ make_tool_tray();
 // print_endcap();
 // print_endcap_with_support();
 // print_endcap_with_support_pair();
-// print_endcap_with_support_quad();
+print_endcap_with_support_quad();
+// print 16 doesn't render
+// print_endcap_with_support_16();
 
 // make_cube_quarter_round([cap.x, cap.y,2]);
 // translate([11,0,0.25]) cube([1,1,0.5], center=true);
